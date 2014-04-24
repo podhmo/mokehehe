@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import unittest
-from mokehehe.configuration import Setting, AdaptivePropertyFactory
+from mokehehe.configuration.adaptive_property import Setting, AdaptivePropertyFactory
 from mokehehe.tests.interfaces import IA
 
 class A(Setting):

@@ -53,3 +53,30 @@ class AdaptivePropertyFactory(object):
 
     def __getattr__(self, name):
         return partial(self.__call__, name=name)
+
+
+class SettingMeta(type):
+    def __new__(self, name, bases, attrs):
+        for k, v in attrs.items():
+            if hasattr(v, "rename"): #xxx:
+                v.rename(k)
+        return type.__new__(self, name, bases, attrs)
+
+class Setting(object, metaclass=SettingMeta):
+    pass
+
+class OnceCall(object):
+    def __init__(self, fn):
+        self.fn = fn
+        self.value = None
+
+    def __call__(self, val):
+        if self.value is None:
+            self.value = self.fn(val)
+        return self.value
+
+def add_transform(config, isource, name, fn):
+    config.registry.adapters.register([isource], IAdaptiveTransform, name, fn)
+
+def add_transform_once(config, isource, name, fn):
+    return add_transform(config, isource, name, OnceCall(fn))
