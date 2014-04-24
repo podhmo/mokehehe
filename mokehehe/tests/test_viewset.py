@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 import unittest
+import contextlib
 
 class AddViewLazyTests(unittest.TestCase):
     def callView(self, config, path):
@@ -10,10 +11,15 @@ class AddViewLazyTests(unittest.TestCase):
         request = DummyRequest(path=path, registry=config.registry)
         return router.handle_request(request)
 
-    def test_it__add_view_add_template(self):
+    @contextlib.contextmanager
+    def prepare(self):
         from pyramid.testing import testConfig
         with testConfig(autocommit=False) as config:
             config.include("mokehehe.configuration") #split modules?
+            yield config
+
+    def test_it__add_view_add_template__ok(self):
+        with self.prepare() as config:
             def view(context, request):
                 return {"hope": None}
 
@@ -22,12 +28,13 @@ class AddViewLazyTests(unittest.TestCase):
             config.add_lazy_template(":TBD:", "json")
             config.commit()
 
-            self.callView(config, "/")
+            ## call view actually 
+            result = (self.callView(config, "/").body).decode("utf-8")
+            self.assertEqual(result, u'{"hope": null}')
 
-    def test_it__add_template_add_view(self):
-        from pyramid.testing import testConfig
-        with testConfig(autocommit=False) as config:
-            config.include("mokehehe.configuration") #split modules?
+
+    def test_it__add_template_add_view__ok(self):
+        with self.prepare() as config:
             def view(context, request):
                 return {"hope": None}
 
@@ -36,14 +43,14 @@ class AddViewLazyTests(unittest.TestCase):
             config.add_lazy_view(view, route_name="top", renderer=":TBD:")
             config.commit()
 
-            self.callView(config, "/")
+            ## call view actually 
+            result = (self.callView(config, "/").body).decode("utf-8")
+            self.assertEqual(result, u'{"hope": null}')
 
-    def test_it__missing_template(self):
-        from pyramid.testing import testConfig
+
+    def test_it__missing_template__raise_ConfigurationError(self):
         from pyramid.exceptions import ConfigurationError
-
-        with testConfig(autocommit=False) as config:
-            config.include("mokehehe.configuration") #split modules?
+        with self.prepare() as config:
             def view(context, request):
                 return {"hope": None}
 
