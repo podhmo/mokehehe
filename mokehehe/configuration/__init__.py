@@ -1,66 +1,33 @@
 # -*- coding:utf-8 -*-
-from zope.interface import Interface
+from mokehehe.configuration.interfaces import IAdaptiveTransform
+from mokehehe.configuration.adaptive_property import AdaptivePropertyFactory
 
-class Transformer(object):
-    def __init__(self, iface):
-        self.iface = iface
-        self.fn = lambda x:x
+class SettingMeta(type):
+    def __new__(self, name, bases, attrs):
+        for k, v in attrs.items():
+            if hasattr(v, "rename"):
+                v.rename(k)
+        return type.__new__(self, name, bases, attrs)
 
-    def define(self, fn):
-        self.fn = fn
-        return fn
-
-    def define_once(self, fn):
-        def wrapper(val):
-            result = fn(val)
-            self.fn = lambda _ : val
-            return result
-        self.fn = wrapper
-        return fn
-
-    def __call__(self, val):
-        return self.fn(val)
-
-class AdaptiveProperty(object):
-    def __init__(self, val, iface):
-        self.val = val
-        self.transformer = Transformer(iface)
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self.transformer
-        else:
-            return self.transformer(self.val)
-
-class AdaptivePropertyFactory(object):
-    def __init__(self, iface):
-        self.iface = iface
-
-    def __call__(self, val):
-        return AdaptiveProperty(val, self.iface)
-
-
-class IA(Interface):
+class Setting(object, metaclass=SettingMeta):
     pass
 
-class A(object):
-    adaptive_property = AdaptivePropertyFactory(IA)
-    x = adaptive_property(["xxxx"])
-    y = adaptive_property(["yyyy"])
-    params = adaptive_property(["xxx"])
+class OnceCall(object):
+    def __init__(self, fn):
+        self.fn = fn
+        self.value = None
 
-@A.y.define
-def y(val):
-    return [val, val]
+    def __call__(self, val):
+        if self.value is None:
+            self.value = self.fn(val)
+        return self.value
 
-@A.params.define_once
-def params(params):
-    params.append("vvvv")
-    return params
+def add_transform(config, isource, name, fn):
+    config.registry.adapters.register([isource], IAdaptiveTransform, name, fn)
 
-print(A().x)
-print(A().y)
-print(A().params)
-print(A().params)
-print(A().params)
-print(A().params)
+def add_transform_once(config, isource, name, fn):
+    return add_transform(config, isource, name, OnceCall(fn))
+
+def includeme(config):
+    config.add_directive("add_transform", add_transform)
+    config.add_directive("add_transform_once", add_transform_once)
