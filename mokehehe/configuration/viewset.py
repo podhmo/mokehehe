@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+from pyramid.view import view_config
 from pyramid.exceptions import ConfigurationError
 from mokehehe.configuration.interfaces import ILazyTemplatePool, ILazyTemplate
 
@@ -63,3 +64,24 @@ def add_lazy_view(config, view=None, **kwargs):
     else:
         lazy_template.add_delayed(register)
 
+class lazy_view_config(view_config): #sorry, i use inheritance
+    def __call__(self, wrapped):
+        settings = self.__dict__.copy()
+        depth = settings.pop('_depth', 0)
+
+        def callback(context, name, ob):
+            config = context.config.with_package(info.module)
+            config.add_lazy_view(view=ob, **settings)
+
+        info = self.venusian.attach(wrapped, callback, category='pyramid',
+                                    depth=depth + 1)
+
+        if info.scope == 'class':
+            # if the decorator was attached to a method in a class, or
+            # otherwise executed at class scope, we need to set an
+            # 'attr' into the settings if one isn't already in there
+            if settings.get('attr') is None:
+                settings['attr'] = wrapped.__name__
+
+        settings['_info'] = info.codeinfo # fbo "action_method"
+        return wrapped
