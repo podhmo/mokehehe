@@ -80,3 +80,10 @@ def add_transform(config, isource, name, fn):
 
 def add_transform_once(config, isource, name, fn):
     return add_transform(config, isource, name, OnceCall(fn))
+
+def includeme(config):
+    config.add_directive("add_transform", add_transform)
+    config.add_directive("add_transform_once", add_transform_once)
+
+
+

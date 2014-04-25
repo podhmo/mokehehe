@@ -85,3 +85,7 @@ class delayed_view_config(view_config): #sorry, i use inheritance
 
         settings['_info'] = info.codeinfo # fbo "action_method"
         return wrapped
+
+def includeme(config):
+    config.add_directive("add_delayed_view", add_delayed_view)
+    config.add_directive("add_delayed_renderer", add_delayed_renderer)
