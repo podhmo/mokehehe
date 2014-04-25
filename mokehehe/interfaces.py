@@ -9,8 +9,8 @@ class ISequence(Interface):
 class IAdaptiveTransform(Interface):
     pass
 
-class ILazyTemplate(Interface):
+class IDelayedRenderer(Interface):
     pass
 
-class ILazyTemplatePool(ISequence):
+class IDelayedRendererPool(ISequence):
     pass
