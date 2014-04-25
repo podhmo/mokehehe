@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import venusian
 from functools import partial
-from mokehehe.configuration.interfaces import IAdaptiveTransform
+from mokehehe.interfaces import IAdaptiveTransform
 
 class Transformer(object):
     def __init__(self, iface, name=None):

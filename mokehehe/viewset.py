@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 from pyramid.view import view_config
 from pyramid.exceptions import ConfigurationError
-from mokehehe.configuration.interfaces import ILazyTemplatePool, ILazyTemplate
+from mokehehe.interfaces import ILazyTemplatePool, ILazyTemplate
 
 class LazyTemplate(object):
     def __init__(self, name, template):

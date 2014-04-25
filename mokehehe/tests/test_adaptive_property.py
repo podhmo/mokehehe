@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import unittest
-from mokehehe.configuration.adaptive_property import Setting, AdaptivePropertyFactory
+from mokehehe.adaptive_property import Setting, AdaptivePropertyFactory
 from mokehehe.tests.interfaces import IA
 
 class A(Setting):
@@ -23,7 +23,7 @@ class AdaptivePropertyIntegrationTest(unittest.TestCase):
     def setUpClass(self):
         from pyramid.testing import setUp
         self.config = setUp()
-        self.config.include("mokehehe.configuration")
+        self.config.include("mokehehe")
         self.config.scan("mokehehe.tests.adaptive_property_sample")
         self.config.commit()
 

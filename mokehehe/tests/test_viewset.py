@@ -15,7 +15,7 @@ class AddViewLazyTests(unittest.TestCase):
     def prepare(self):
         from pyramid.testing import testConfig
         with testConfig(autocommit=False) as config:
-            config.include("mokehehe.configuration") #split modules?
+            config.include("mokehehe") #split modules?
             yield config
 
     def test_it__add_view_add_template__ok(self):
