@@ -15,7 +15,7 @@ class AddViewDelayedTests(unittest.TestCase):
     def prepare(self):
         from pyramid.testing import testConfig
         with testConfig(autocommit=False) as config:
-            config.include("mokehehe") #split modules?
+            config.include("mokehehe.delayed_view") #split modules?
             yield config
 
     def test_it__add_view_add_renderer__ok(self):
