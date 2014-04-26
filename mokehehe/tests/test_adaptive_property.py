@@ -23,7 +23,7 @@ class AdaptivePropertyIntegrationTest(unittest.TestCase):
     def setUpClass(self):
         from pyramid.testing import setUp
         self.config = setUp()
-        self.config.include("mokehehe")
+        self.config.include("mokehehe.adaptive_property")
         self.config.scan("mokehehe.tests.adaptive_property_sample")
         self.config.commit()
 

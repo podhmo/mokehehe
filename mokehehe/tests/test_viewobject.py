@@ -155,13 +155,12 @@ class IntegrationWithConfiguratorTests(unittest.TestCase):
 
     def test_it(self):
         from pyramid.testing import testConfig
-        from mokehehe.viewobject import MapperButModifyClass, parse_get, viewobject_method
+        from mokehehe.viewobject import Mapper, parse_get, viewobject_method
 
         def todict(v):
             return {"value": v}
 
         with testConfig() as config:
-            @MapperButModifyClass(parse_get, todict)
             class Ob(object):
                 def __call__(self, message):
                     return message*2
@@ -170,9 +169,12 @@ class IntegrationWithConfiguratorTests(unittest.TestCase):
                 def nihongo(self):
                     return "hai"
 
+            config.include("mokehehe.viewobject")
             config.add_route("hello", "/")
-            config.add_view(Ob, route_name="hello", renderer="json")
-            config.add_view(Ob, route_name="hello", request_type=INihongoRequest, attr="nihongo", renderer="json")
+            MOb = config.add_mapped_viewobject(Mapper(parse_get, todict), Ob)
+            self.assertIsNotNone(MOb)
+            config.add_view(MOb, route_name="hello", renderer="json")
+            config.add_view(MOb, route_name="hello", request_type=INihongoRequest, attr="nihongo", renderer="json")
             config.commit()
 
             result = self.callView(config, "/hello", GET={"message": "hello"})

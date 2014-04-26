@@ -3,6 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 import inspect
 import venusian
+from pyramid.httpexceptions import HTTPBadRequest
 from .interfaces import IMappedViewObject
 from .langhelpers import ClassStoreDecoratorFactory
 
@@ -38,9 +39,10 @@ def parse_params(context, request):
 
 positional = object()
 class Mapper(object):
-    def __init__(self, begin=parse_params, end=identity):
+    def __init__(self, begin=parse_params, end=identity, FailException=HTTPBadRequest):
         self.begin = begin
         self.end = end
+        self.FailException = FailException
 
     def create_wrapped_initialize(self, vocls):
         try:
@@ -53,15 +55,18 @@ class Mapper(object):
             original_init = vocls.__init__ #xxxx: too rubbish
             def wrapped_init(ob, context, request):
                 kwargs = {}
-                for k, t in name_type_paris:
-                    if t is positional:
-                        kwargs[k] = request.matchdict[k]
-                    elif callable(t):
-                        kwargs[k] = t(request.matchdict[k])
-                    else:
-                        kwargs[k] = t
-                ob.context = context
-                ob.request = request
+                try:
+                    for k, t in name_type_paris:
+                        if t is positional:
+                            kwargs[k] = request.matchdict[k]
+                        elif callable(t):
+                            kwargs[k] = t(request.matchdict[k])
+                        else:
+                            kwargs[k] = t
+                    ob.context = context
+                    ob.request = request
+                except ValueError as e:
+                    raise self.FailException(repr(e))
                 return original_init(ob, **kwargs)
             return wrapped_init
         except TypeError:
@@ -93,9 +98,8 @@ class Mapper(object):
 
     def __call__(self, vocls):
         def callback(context, name, ob):
-            mapped_class = self.create_mapped_viewobject_class(vocls)
             config = context.config.with_package(info.module)
-            config.registry.registerUtility(mapped_class, IMappedViewObject, name=vocls.__name__) #xxx:
+            config.add_mapped_viewobject(self, vocls)
         info = self.venusian.attach(vocls, callback, category="mokehehe")
         return vocls
 
@@ -111,13 +115,20 @@ class FooViewObject(object):
         return "foo"*self.n
 """
 
-def get_mapped_view_object(config, clsname): ##todo: fix dependents on calling orde.
+def add_mapped_viewobject(config, mapper, clsname):
+    vocls = config.maybe_dotted(clsname)
+    mapped_class = mapper.create_mapped_viewobject_class(vocls)
+    config.registry.registerUtility(mapped_class, IMappedViewObject, name=vocls.__name__) #xxx:
+    return mapped_class
+
+def get_mapped_viewobject(config, clsname): ##todo: fix dependents on calling orde.
     """
-    vo = config.mapped_view_object(".FooViewObject")
+    vo = config.mapped_viewobject(".FooViewObject")
     config.add_view(vo, route_name="foo", attr="foo")
     """
     cls = config.maybe_dotted(clsname)
     return config.registry.getUtility(IMappedViewObject, name=cls.__name__)
 
 def includeme(config):
-    config.add_directive("mapped_view_object", get_mapped_view_object)
+    config.add_directive("mapped_viewobject", get_mapped_viewobject)
+    config.add_directive("add_mapped_viewobject", add_mapped_viewobject)
