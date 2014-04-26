@@ -52,3 +52,6 @@ class IRegisteringNode(Interface):
 class IRegisteringBuilderRepository(IDict):
     pass
 
+##
+class IMappedViewObject(Interface):
+    pass

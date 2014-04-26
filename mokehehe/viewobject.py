@@ -2,7 +2,10 @@
 import logging
 logger = logging.getLogger(__name__)
 import inspect
+import venusian
+from .interfaces import IMappedViewObject
 from .langhelpers import ClassStoreDecoratorFactory
+
 
 """
 this is short hand view.
@@ -20,7 +23,6 @@ viewobject_method = ClassStoreDecoratorFactory(
 identity = lambda x : x
 
 
-##### todo: venusian
 class Mapper(object):
     def __init__(self, begin=identity, end=identity):
         self.begin = begin
@@ -29,12 +31,12 @@ class Mapper(object):
     def create_wrapped_initialize(self, vocls):
         try:
             args = inspect.getargspec(vocls.__init__).args[1:]
-            vocls._init__original__ = vocls.__init__ #xxxx: too rubbish
+            original_init = vocls.__init__ #xxxx: too rubbish
             def wrapped_init(ob, context, request):
                 kwargs = {k: request.matchdict[k] for k in args}
                 ob.context = context
                 ob.request = request
-                return ob._init__original__(**kwargs)
+                return original_init(ob, **kwargs)
             return wrapped_init
         except TypeError:
             def simple_init(ob, context, request):
@@ -49,20 +51,31 @@ class Mapper(object):
             return self.end(result)
         return wrapped
 
-    def __call__(self, vocls):
-        if hasattr(vocls, "_init__original__"):
-            raise Exception("oops, multiple call")
-
+    def create_mapped_viewobject_class(self, vocls):
         init = self.create_wrapped_initialize(vocls)
-        if init:
-            vocls.__init__ = init
-
+        attrs = {"__init__": init}
         if hasattr(vocls, "__call__"):
-            setattr(vocls, "__call__", self.wrapping_method(getattr(vocls, "__call__")))
+            attrs["__call__"] = self.wrapping_method(getattr(vocls, "__call__"))
         for name in viewobject_method.get_candidates(vocls):
-            setattr(vocls, name, self.wrapping_method(getattr(vocls, name)))
+            attrs[name] = self.wrapping_method(getattr(vocls, name))
+        mapped_class_name = "{}Proxy".format(vocls.__name__)
+        mapped_class = type(mapped_class_name, (vocls, ), attrs)
+        return mapped_class
+
+    venusian = venusian #test
+
+    def __call__(self, vocls):
+        def callback(context, name, ob):
+            mapped_class = self.create_mapped_viewobject_class(vocls)
+            config = context.config.with_package(info.module)
+            config.registry.registerUtility(mapped_class, IMappedViewObject, name=vocls.__name__) #xxx:
+        info = self.venusian.attach(vocls, callback, category="mokehehe")
         return vocls
 
+
+class MapperButModifyClass(Mapper):
+    def __call__(self, vocls):
+        return self.create_mapped_viewobject_class(vocls)
 
 def parse_get(context, request):
     return request.GET
@@ -76,3 +89,21 @@ def parse_json_body(context, request):
 def parse_params(context, request):
     return request.params
 
+
+"""
+@Mapper(parse_get, todict)
+class FooViewObject(object):
+    def foo(self, n):
+        return "foo"*self.n
+"""
+
+def get_mapped_view_object(config, clsname): ##todo: fix dependents on calling orde.
+    """
+    vo = config.mapped_view_object(".FooViewObject")
+    config.add_view(vo, route_name="foo", attr="foo")
+    """
+    cls = config.maybedotted(clsname)
+    return config.registry.queryUtility(IMappedViewObject, name=cls.__name__)
+
+def includeme(config):
+    config.add_directive("mapped_view_object", get_mapped_view_object)

@@ -2,10 +2,31 @@
 
 import unittest
 
-class ViewObjectTests(unittest.TestCase):
+class ViewObjectNoChange(unittest.TestCase):
     def _makeOne(self, *args, **kwargs):
         from mokehehe.viewobject import Mapper
         return Mapper(*args, **kwargs)
+
+    def test_it(self):
+        from mokehehe.viewobject import parse_get
+        class Ob(object):
+            def __init__(self, n):
+                self.n = n
+
+            def foo(self):
+                return "foo"*self.n
+
+        MappedOb = self._makeOne(parse_get)(Ob)
+
+        target = MappedOb(3)
+        self.assertEqual(target.n, 3)
+        self.assertEqual(target.foo(), "foofoofoo")
+
+
+class ViewObjectTests(unittest.TestCase):
+    def _makeOne(self, *args, **kwargs):
+        from mokehehe.viewobject import MapperButModifyClass
+        return MapperButModifyClass(*args, **kwargs)
 
     def test_match_dict_values__are_instance_attribute(self):
         from mokehehe.viewobject import parse_get
@@ -95,9 +116,11 @@ class ViewObjectTests(unittest.TestCase):
         result = target()
         self.assertEqual(result, {"value": 20})
 
+
 from zope.interface import Interface, directlyProvides
 class INihongoRequest(Interface):
     pass
+
 
 class IntegrationWithConfiguratorTests(unittest.TestCase):
     def callView(self, config, path, matchdict=None, GET=None, POST=None, iface=None):
@@ -117,13 +140,13 @@ class IntegrationWithConfiguratorTests(unittest.TestCase):
 
     def test_it(self):
         from pyramid.testing import testConfig
-        from mokehehe.viewobject import Mapper, parse_get, viewobject_method
+        from mokehehe.viewobject import MapperButModifyClass, parse_get, viewobject_method
 
         def todict(v):
             return {"value": v}
 
         with testConfig() as config:
-            @Mapper(parse_get, todict)
+            @MapperButModifyClass(parse_get, todict)
             class Ob(object):
                 def __call__(self, message):
                     return message*2
