@@ -42,6 +42,21 @@ class ViewObjectTests(unittest.TestCase):
         target = MappedOb(context, request)
         self.assertEqual(target.x, 10)
 
+    def test_type_converter(self):
+        from mokehehe.viewobject import parse_get
+        class Ob(object):
+            def __init__(self, x=int):
+                self.x = x
+        MappedOb = self._makeOne(parse_get)(Ob)
+
+        class request(object):
+            matchdict = {"x": "10"}
+
+        context = None
+        target = MappedOb(context, request)
+        self.assertEqual(target.x, 10)
+
+
     def test_begin_parse_reading_request_GET(self):
         from mokehehe.viewobject import parse_get
 

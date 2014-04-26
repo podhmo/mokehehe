@@ -23,22 +23,49 @@ viewobject_method = ClassStoreDecoratorFactory(
 identity = lambda x : x
 
 
+def parse_get(context, request):
+    return request.GET
+
+def parse_post(context, request):
+    return request.POST
+
+def parse_json_body(context, request):
+    return request.json_body
+
+def parse_params(context, request):
+    return request.params
+
+
+positional = object()
 class Mapper(object):
-    def __init__(self, begin=identity, end=identity):
+    def __init__(self, begin=parse_params, end=identity):
         self.begin = begin
         self.end = end
 
     def create_wrapped_initialize(self, vocls):
         try:
-            args = inspect.getargspec(vocls.__init__).args[1:]
+            spec = inspect.getargspec(vocls.__init__)
+            name_type_paris = [[k, positional] for k in spec.args[1:]]
+            if spec.defaults is not None:
+                for i, t in enumerate(reversed(spec.defaults)):
+                    name_type_paris[-(i+1)][1] = t
+
             original_init = vocls.__init__ #xxxx: too rubbish
             def wrapped_init(ob, context, request):
-                kwargs = {k: request.matchdict[k] for k in args}
+                kwargs = {}
+                for k, t in name_type_paris:
+                    if t is positional:
+                        kwargs[k] = request.matchdict[k]
+                    elif callable(t):
+                        kwargs[k] = t(request.matchdict[k])
+                    else:
+                        kwargs[k] = t
                 ob.context = context
                 ob.request = request
                 return original_init(ob, **kwargs)
             return wrapped_init
         except TypeError:
+            logger.debug("%s doesn't have __init__", vocls)
             def simple_init(ob, context, request):
                 ob.context = context
                 ob.request = request
@@ -77,19 +104,6 @@ class MapperButModifyClass(Mapper):
     def __call__(self, vocls):
         return self.create_mapped_viewobject_class(vocls)
 
-def parse_get(context, request):
-    return request.GET
-
-def parse_post(context, request):
-    return request.POST
-
-def parse_json_body(context, request):
-    return request.json_body
-
-def parse_params(context, request):
-    return request.params
-
-
 """
 @Mapper(parse_get, todict)
 class FooViewObject(object):
@@ -102,8 +116,8 @@ def get_mapped_view_object(config, clsname): ##todo: fix dependents on calling o
     vo = config.mapped_view_object(".FooViewObject")
     config.add_view(vo, route_name="foo", attr="foo")
     """
-    cls = config.maybedotted(clsname)
-    return config.registry.queryUtility(IMappedViewObject, name=cls.__name__)
+    cls = config.maybe_dotted(clsname)
+    return config.registry.getUtility(IMappedViewObject, name=cls.__name__)
 
 def includeme(config):
     config.add_directive("mapped_view_object", get_mapped_view_object)
