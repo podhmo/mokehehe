@@ -10,9 +10,9 @@ class VariantTest(unittest.TestCase):
         cls.Success = cls.Result("Success", "value")
 
     def _getTarget(self):
-        from mokehehe.miniadt import dispatchmethod, Match
-        @self.Result.validation
-        class Match0(Match):
+        from mokehehe.miniadt import dispatchmethod
+        @self.Result.as_match_class
+        class Match0(object):
             @dispatchmethod
             def Failure(code, message):
                 return ["oops", code, message]

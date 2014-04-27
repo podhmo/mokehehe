@@ -6,7 +6,6 @@ import operator as op
 from zope.interface import (
     implementer,
     provider,
-    providedBy,
     directlyProvides, 
     Interface
 )
@@ -20,15 +19,10 @@ from .interfaces import (
     ISubRegisterFactory, 
     IRegisteringBuilderRepository
 )
-
-def merged(*args):
-    d0 = {}
-    for d1 in args:
-        d0.update(d1)
-    return d0
-
-def first_of(ob):
-    return [iter(providedBy(ob)).__next__()]
+from .langhelpers import (
+    first_of, 
+    merged
+)
 
 class _IRoot(Interface):
     pass

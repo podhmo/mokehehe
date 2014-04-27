@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 import sys
+from zope.interface import  providedBy
+
 
 inPy3k = sys.version_info[0] == 3
 
@@ -10,6 +12,19 @@ ClassType = type(OldStyleClass)
 ClassTypes = (type,)
 if not inPy3k:
     ClassTypes = (type, ClassType)
+
+
+## utility
+def merged(*args):
+    d0 = {}
+    for d1 in args:
+        d0.update(d1)
+    return d0
+
+def first_of(ob):
+    return [iter(providedBy(ob)).__next__()]
+
+
 
 class ClassStoreDecoratorFactory(object):
     def __init__(self, cache_name, cache_factory, cache_convert, value_convert):
