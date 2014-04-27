@@ -4,8 +4,8 @@ import unittest
 class VariantTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        from mokehehe.miniadt import ADTTypeFactory
-        cls.Result = ADTTypeFactory("Result")
+        from mokehehe.miniadt import ADTTypeProvider
+        cls.Result = ADTTypeProvider("Result")
         cls.Failure = cls.Result("Failure", "code message")
         cls.Success = cls.Result("Success", "value")
 
@@ -40,11 +40,11 @@ class VariantTest(unittest.TestCase):
         self.assertEqual(result, ["oops", 404, "not found"])
 
     def test_validation__failure(self):
-        from mokehehe.miniadt import ADTTypeFactory, NotComprehensive
+        from mokehehe.miniadt import ADTTypeProvider, NotComprehensive
 
         target = self._getTarget()
 
-        Another = ADTTypeFactory("Another")
+        Another = ADTTypeProvider("Another")
         Another("Item", "name value")
 
         with self.assertRaises(NotComprehensive):

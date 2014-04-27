@@ -78,9 +78,9 @@ class ViewObjectTests(unittest.TestCase):
 
     def test_end_response_Branching(self):
         from mokehehe.viewobject import parse_get
-        from mokehehe.miniadt import ADTTypeFactory, Match, dispatchmethod
+        from mokehehe.miniadt import ADTTypeProvider, Match, dispatchmethod
 
-        Result = ADTTypeFactory("Result")
+        Result = ADTTypeProvider("Result")
         Success = Result("Success", "val")
         Failure = Result("Failure", "val")
 

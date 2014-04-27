@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 """
 ## define mini adt
-Result = ADTTypeFactory("Result")
+Result = ADTTypeProvider("Result")
 Failure = Result("Failure", "code message")
 Success = Result("Success", "value")
 
@@ -51,7 +51,7 @@ def match_dispatch(cls, target):
 class Match(object):
     __new__ = match_dispatch
 
-class ADTTypeFactory(object):
+class ADTTypeProvider(object):
     def __init__(self, tag, dispatch_function=match_dispatch):
         self.tag = tag
         self.members = {}
