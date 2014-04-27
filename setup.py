@@ -1,7 +1,8 @@
 from setuptools import setup, find_packages
 requires = [
     "pyramid", 
-    "sqlalchemy"
+    "sqlalchemy", 
+    "pyramid_layout"
     ]
 
 setup(name='mokehehe',

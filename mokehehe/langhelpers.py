@@ -1,6 +1,10 @@
 # -*- coding:utf-8 -*-
 import sys
-from zope.interface import  providedBy
+from zope.interface.interface import InterfaceClass
+from zope.interface import (
+    providedBy,
+    implementer
+)
 
 
 inPy3k = sys.version_info[0] == 3
@@ -22,9 +26,39 @@ def merged(*args):
     return d0
 
 def first_of(ob):
-    return [iter(providedBy(ob)).__next__()]
+    try:
+        return [iter(providedBy(ob)).__next__()]
+    except StopIteration:
+        return []
 
+class DynamicInterfaceFactory(object):
+    def __init__(self):
+        self.cache = {}
 
+    def __call__(self, cls):
+        try:
+            return self.cache[id(cls)]
+        except KeyError:
+            iface = self.create(cls)
+            self.cache[id(cls)] = iface
+            return iface
+
+    def implementer(self, cls):
+        return implementer(self.__call__(cls))(cls)
+
+    def create(self, cls):
+        return dynamic_interface(cls)
+
+def dynamic_interface(cls):
+    name = "I{}".format(cls.__name__)
+    return InterfaceClass(name)
+
+_iface_factory = None
+def make_interface_from_class(cls):
+    global _iface_factory
+    if _iface_factory is None:
+        _iface_factory = DynamicInterfaceFactory()
+    return _iface_factory(cls)
 
 class ClassStoreDecoratorFactory(object):
     def __init__(self, cache_name, cache_factory, cache_convert, value_convert):

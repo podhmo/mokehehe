@@ -55,3 +55,13 @@ class IRegisteringBuilderRepository(IDict):
 ##
 class IMappedViewObject(Interface):
     pass
+
+## 
+class IModel(Interface):
+    pass
+
+class IModelInformation(Interface):
+    name = Attribute("name for system")
+    display_name = Attribute("name for human")
+    model_id = Attribute("persistent id")
+
