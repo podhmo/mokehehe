@@ -56,6 +56,24 @@ class IRegisteringBuilderRepository(IDict):
 class IMappedViewObject(Interface):
     pass
 
+##
+class IWorkflowRelationRegister(Interface):
+    def register(iface, route_name,  matched_route_name):
+        pass
+
+class IWorkflowRepository(IDict): #todo more weak convention
+    pass
+
+class IWorkflowNode(Interface):
+    def route_url(*args, **kwargs):
+        pass
+
+    def route_path(*args, **kwargs):
+        pass
+
+class IWorkflowWhen(Interface):
+    pass
+
 ## 
 class IModel(Interface):
     pass
