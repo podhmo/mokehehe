@@ -7,11 +7,13 @@ from pyramid.interfaces import (
     IRouteRequest
 )
 from pyramid.exceptions import ConfigurationError
+from pyramid.decorator import reify
 from .interfaces import (
     IWorkflowRepository, 
     IWorkflowNode, 
     IWorkflowRelationRegister
 )
+from .langhelpers import first_of
 
 @implementer(IWorkflowNode)
 class MappedRoute(object):
@@ -28,32 +30,39 @@ class MappedRoute(object):
 
 @implementer(IWorkflowRepository)
 class FaceWorkFlowRepository(object):
+    default_request_type = IRequest
     def __init__(self, request, route=None):
         self.request = request
         self.route = route or request.matched_route
 
+    @reify
+    def request_type(self):
+        return first_of(self.request)[0] or self.default_request_type
+
     def __getitem__(self, iface):
         adapters = self.request.registry.adapters
-        return adapters.lookup([iface], IWorkflowNode, self.route.name)(self.request)
+        return adapters.lookup([iface, self.request_type], IWorkflowNode, self.route.name)(self.request)
 
 
 @implementer(IWorkflowRelationRegister)
 class WorkflowRelationRegister(object):
-    def __init__(self, config, validation=True, make_node=MappedRoute):
+    def __init__(self, config, request_type=IRequest, validation=True, make_node=MappedRoute):
         self.config = config
+        self.request_type = request_type
         self.used_route_name_set = set()
         self.validation = validation
         if validation:
             self.bind_validation()
         self.make_node = make_node
 
-    def register(self, iface, from_route_name, to_route_name):
+    def register(self, iface, from_route_name, to_route_name, request_type=None):
+        request_type = request_type or self.request_type
         iface = self.config.maybe_dotted(iface)
         self.used_route_name_set.add(from_route_name)
         self.used_route_name_set.add(to_route_name)
         adapters = self.config.registry.adapters
         fn = partial(self.make_node, name=to_route_name)
-        adapters.register([iface], IWorkflowNode, from_route_name, fn)
+        adapters.register([iface, request_type], IWorkflowNode, from_route_name, fn)
 
     @contextlib.contextmanager
     def sub(self, iface):
