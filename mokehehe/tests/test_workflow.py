@@ -60,10 +60,10 @@ class WorkflowRegistrationTests(unittest.TestCase):
         with testConfig(autocommit=False) as config:
             config.include("mokehehe.workflow")
             config.add_route("failure", "failure")
-            with config.get_workflow().sub(IFailure) as s:
-                s("create", "failure")
-                s("update", "failure")
-                s("show", "failure")
+            with config.get_workflow().sub(IFailure) as goto:
+                goto("create", "failure")
+                goto("update", "failure")
+                goto("show", "failure")
 
             config.add_route("create", "create")
             config.add_route("update", "update")
@@ -82,19 +82,14 @@ class WorkflowRuntimeTests(unittest.TestCase):
     def test_it(self):
         """ on /foo/craete, success redirect is /foo/list """
         from pyramid.testing import testConfig
-        from zope.interface import Interface
-        class IAPIRequest(Interface):
-            pass
-
         with testConfig(autocommit=False) as config:
             config.include("mokehehe.workflow")
             config.add_route("foo.list", "/foo/list")
             config.add_route("foo.create", "/foo/create")
             config.add_route("foo.api.list", "/api/foo/list")
 
-            with config.get_workflow().sub(IAfterModelCreate) as r:
-                r(from_route_name="foo.create", to_route_name="foo.list")
-                r(from_route_name="foo.create", to_route_name="foo.api.list", request_type=IAPIRequest)
+            with config.get_workflow().sub(IAfterModelCreate) as goto:
+                goto(from_route_name="foo.create", to_route_name="foo.list")
             config.commit()
 
             ## on request time. usual request
@@ -106,6 +101,25 @@ class WorkflowRuntimeTests(unittest.TestCase):
             self.assertTrue(request.workflow)
             result = request.workflow[IAfterModelCreate].route_path()
             self.assertEqual(result, "/foo/list")
+
+
+    def test_it_another_request_type(self):
+        """ on /foo/craete, success redirect is /foo/list """
+        from pyramid.testing import testConfig
+        from zope.interface import Interface
+        class IAPIRequest(Interface):
+            pass
+
+        with testConfig(autocommit=False) as config:
+            config.include("mokehehe.workflow")
+            config.add_route("foo.list", "/foo/list")
+            config.add_route("foo.create", "/foo/create")
+            config.add_route("foo.api.list", "/api/foo/list")
+
+            with config.get_workflow().sub(IAfterModelCreate) as goto:
+                goto("foo.create", "foo.list")
+                goto("foo.create", "foo.api.list", request_type=IAPIRequest)
+            config.commit()
 
             ### on request time. api request
             request2 = self._makeRequest(config)
