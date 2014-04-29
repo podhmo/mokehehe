@@ -4,9 +4,9 @@
 
 from functools import partial
 from pyramid.response import Response
-from .miniadt import ADTTypeProvider, dispatchmethod
-from .interfaces import IModelInformation
-from .langhelpers import first_of
+from ..miniadt import ADTTypeProvider, dispatchmethod
+from ..interfaces import IModelInformation
+from ..langhelpers import first_of
 
 def flow_dispatch(cls, target):
     if isinstance(target, dict):
