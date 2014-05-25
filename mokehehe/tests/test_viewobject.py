@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
-
 import unittest
+
 
 class ViewObjectNoChange(unittest.TestCase):
     def _makeOne(self, *args, **kwargs):
@@ -9,12 +9,13 @@ class ViewObjectNoChange(unittest.TestCase):
 
     def test_it(self):
         from mokehehe.viewobject import parse_get
+
         class Ob(object):
             def __init__(self, n):
                 self.n = n
 
             def foo(self):
-                return "foo"*self.n
+                return "foo" * self.n
 
         MappedOb = self._makeOne(parse_get)(Ob)
 
@@ -30,6 +31,7 @@ class ViewObjectTests(unittest.TestCase):
 
     def test_match_dict_values__are_instance_attribute(self):
         from mokehehe.viewobject import parse_get
+
         class Ob(object):
             def __init__(self, x):
                 self.x = x
@@ -44,6 +46,7 @@ class ViewObjectTests(unittest.TestCase):
 
     def test_type_converter(self):
         from mokehehe.viewobject import parse_get
+
         class Ob(object):
             def __init__(self, x=int):
                 self.x = x
@@ -56,12 +59,12 @@ class ViewObjectTests(unittest.TestCase):
         target = MappedOb(context, request)
         self.assertEqual(target.x, 10)
 
-
     def test_begin_parse_reading_request_GET(self):
         from mokehehe.viewobject import parse_get
 
         test = self
         marker = object()
+
         class Ob(object):
             def __call__(self, x):
                 test.assertEqual(x, 10)
@@ -78,24 +81,25 @@ class ViewObjectTests(unittest.TestCase):
 
     def test_end_response_Branching(self):
         from mokehehe.viewobject import parse_get
-        from mokehehe.miniadt import ADTTypeProvider, Match, dispatchmethod
+        from miniadt import ADTTypeProvider, dispatchfunction
 
         Result = ADTTypeProvider("Result")
         Success = Result("Success", "val")
         Failure = Result("Failure", "val")
 
-        @Result.validation
-        class ResultDispatch(Match):
-            @dispatchmethod
+        @Result.match
+        class ResultDispatch(object):
+            @dispatchfunction
             def Success(val):
                 return {"val": val, "status": 200}
-            @dispatchmethod
+
+            @dispatchfunction
             def Failure(val):
                 return {"val": val, "status": 400}
 
         class Ob(object):
             def __call__(self, x):
-                return Success(val=x*x)
+                return Success(val=x * x)
 
         MappedOb = self._makeOne(parse_get, ResultDispatch)(Ob)
 
@@ -110,9 +114,11 @@ class ViewObjectTests(unittest.TestCase):
 
     def test_initialize_begin_end(self):
         from mokehehe.viewobject import parse_json_body
+
         class Ob(object):
             def __init__(self, object_id):
                 self.object_id = object_id
+
             def __call__(self, x):
                 return self.object_id * x
 
@@ -133,6 +139,7 @@ class ViewObjectTests(unittest.TestCase):
 
 
 from zope.interface import Interface, directlyProvides
+
 class INihongoRequest(Interface):
     pass
 
@@ -163,7 +170,7 @@ class IntegrationWithConfiguratorTests(unittest.TestCase):
         with testConfig() as config:
             class Ob(object):
                 def __call__(self, message):
-                    return message*2
+                    return message * 2
 
                 @viewobject_method
                 def nihongo(self):
